@@ -31,7 +31,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 မင်္ဂလာပါဗျာ။ Mobile Legends Username & Region Checker Bot မှ ကြိုဆိုပါတယ်။\n\n"
         "🔎 *စစ်ဆေးရန်အတွက် အောက်ပါအတိုင်း ပေးပို့ပါ -*\n"
         "`/check [ID] [Server]`\n\n"
-        "💡 _ဥပမာ -_ `/check 12345678 1234`"
+        "💡 _ဥပမာ -_ `/check 1503905015 16299`"
     )
     await update.message.reply_text(welcome_text, parse_mode="Markdown")
 
@@ -41,7 +41,7 @@ async def check_mlbb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args or len(context.args) < 2:
         await update.message.reply_text(
             "❌ *အသုံးပြုပုံ မှားယွင်းနေပါသည်။*\n"
-            "မှန်ကန်သော ပုံစံ - `/check 12345678 1234`", 
+            "မှန်ကန်သော ပုံစံ - `/check 1503905015 16299`", 
             parse_mode="Markdown"
         )
         return
@@ -49,7 +49,8 @@ async def check_mlbb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ml_id = context.args[0]
     ml_server = context.args[1]
 
-    await update.message.reply_text("⏳ *ခဏစောင့်ပေးပါ... စစ်ဆေးနေပါတယ်...*", parse_mode="Markdown")
+    # Bot အလုပ်လုပ်နေကြောင်း သိရအောင် ချက်ချင်း စာပြန်ခိုင်းထားခြင်း
+    status_msg = await update.message.reply_text("⏳ *ခဏစောင့်ပေးပါ... စစ်ဆေးနေပါတယ်...*", parse_mode="Markdown")
 
     try:
         # API URL ဆောက်ခြင်း
@@ -57,9 +58,11 @@ async def check_mlbb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # API ထံ Request ပို့ခြင်း
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
-        response = requests.get(api_url, headers=headers, timeout=10)
+        
+        # 8 စက္ကန့်အတွင်း Response မလာရင် Timeout ဖြစ်စေရန်
+        response = requests.get(api_url, headers=headers, timeout=8)
         raw_html = response.text
 
         # Regex အသုံးပြုပြီး Nickname နှင့် Country ကို ဖြတ်ထုတ်ခြင်း
@@ -78,18 +81,20 @@ async def check_mlbb(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🌍 *Region:* `{}`"
             ).format(nickname, ml_id, ml_server, country)
             
-            await update.message.reply_text(result_text, parse_mode="Markdown")
+            await status_msg.edit_text(result_text, parse_mode="Markdown")
         else:
-            await update.message.reply_text("❌ *Account ရှာမတွေ့ပါ။* ID နှင့် Server ပြန်စစ်ပေးပါ။", parse_mode="Markdown")
+            await status_msg.edit_text("❌ *Account ရှာမတွေ့ပါ။* ID နှင့် Server ပြန်စစ်ပေးပါ။ သို့မဟုတ် ဤ API က အလုပ်မလုပ်တော့ပါ။", parse_mode="Markdown")
 
+    except requests.exceptions.Timeout:
+        await status_msg.edit_text("❌ *အချိန်ကြာလွန်းနေပါသည်!* API Server က ပြန်လည်မဖြေကြားနိုင်တော့ပါ။")
     except Exception as e:
         print(f"Error: {e}")
-        await update.message.reply_text("❌ *စစ်ဆေးရတာ မအောင်မြင်ပါ။* API Server မှာ Error တက်နေပါသည်။")
+        await status_msg.edit_text(f"❌ *စစ်ဆေးရတာ မအောင်မြင်ပါ။*\nError Message: {e}")
 
 
 # --- 3. MAIN RUNNER ---
 def main():
-    # သင့်ရဲ့ Telegram Bot Token ကို ဤနေရာတွင် တိုက်ရိုက်ထည့်သွင်းပေးထားပါတယ်
+    # သင့်ရဲ့ Telegram Bot Token ကို ဤနေရာတွင် ထည့်သွင်းပေးထားပါတယ်
     BOT_TOKEN = "8602797884:AAG5IWbaUExoFs1GwWVsDsl8qUvwobMShzs"
 
     # Web Server ကို နောက်ကွယ်ကနေ အလုပ်လုပ်ခိုင်းခြင်း
